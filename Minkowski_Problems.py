@@ -9,12 +9,6 @@ from matplotlib import pyplot as plt
 import numpy as np
 import matplotlib.transforms as mtransforms
 
-t = np.linspace(0,3,1000)
-beta = 0.4
-x_obs0 = 0*t
-x_obs1 = beta*t
-
-
 # def plot_observer_trajectories(t, x_0, x_1):
 #     # Initialize Plots
 #     fig = plt.figure()
@@ -63,10 +57,10 @@ def format_plot(ax):
     ax.set_xlabel('x (light-yrs)')
     ax.set_ylabel('ct (light-yrs)')
     temp = ax.get_lines()
-    xmin = np.min([i.get_xdata() for i in temp])
-    xmax = np.max([i.get_xdata() for i in temp])
-    ymin = np.min([i.get_ydata() for i in temp])
-    ymax = np.max([i.get_ydata() for i in temp])
+    xmin = np.min([np.min(i.get_xdata()) for i in temp])
+    xmax = np.max([np.max(i.get_xdata()) for i in temp])
+    ymin = np.min([np.min(i.get_ydata()) for i in temp])
+    ymax = np.max([np.max(i.get_ydata()) for i in temp])
 
     ax.set_xlim((xmin - 0.05*(xmax-xmin), xmax + 0.05*(xmax-xmin)))
     ax.set_ylim((ymin - 0.05*(ymax-ymin), ymax + 0.05*(ymax-ymin)))
@@ -80,10 +74,10 @@ def add_light_cones(x0, y0, ax, timeforward=True):
     # (xmin, xmax) = ax.get_xlim()
     # (ymin, ymax) = ax.get_ylim()
     temp = ax.get_lines()
-    xmin = np.min([i.get_xdata() for i in temp])
-    xmax = np.max([i.get_xdata() for i in temp])
-    ymin = np.min([i.get_ydata() for i in temp])
-    ymax = np.max([i.get_ydata() for i in temp])
+    xmin = np.min([np.min(i.get_xdata()) for i in temp])
+    xmax = np.max([np.max(i.get_xdata()) for i in temp])
+    ymin = np.min([np.min(i.get_ydata()) for i in temp])
+    ymax = np.max([np.max(i.get_ydata()) for i in temp])
     
     if timeforward:
         negdist = min(x0 - xmin, ymax - y0)
@@ -95,16 +89,27 @@ def add_light_cones(x0, y0, ax, timeforward=True):
         posdist = min(xmax - x0, y0 - ymin)
         ax.plot([x0 - negdist, x0], [y0 - negdist, y0], color='black', linewidth=1)
         ax.plot([x0, x0 + posdist], [y0, y0 - posdist], color='black', linewidth=1)
-        
-    # fig =ax.get_figure()
-    # Offsets for text placement
-    # trans_offset = mtransforms.offset_copy(ax.transData, fig=fig,
-    #                                     x=-0.3, y=0.0, units='inches')
-    # ax.text(1.2*t[len(t)//2], 0.8*t[len(t)//2], 'light-cone', rotation=45, transform=trans_offset)
-    # ax.text(-1.2*t[len(t)//2], 0.8*t[len(t)//2], 'light-cone', rotation=-45, transform=trans_offset)
 
+def extract_position_at_time(time, t_array, x_array):
+    indx = np.argwhere( np.abs(t_array - time) == np.min(np.abs(t_array - time)) )
+    if t_array[indx] <= time:
+        return x_array[indx] + (x_array[indx+1] - x_array[indx])*(time - t_array[indx])/(t_array[indx+1] - t_array[indx])
+    else:
+        return x_array[indx] - (x_array[indx] - x_array[indx-1])*(t_array[indx]-time)/(t_array[indx] - t_array[indx-1])
+
+t = np.linspace(0,3,1000)
+
+# Observer 0 has no speed
+x_obs0 = 0*t
+# Observer 1 has a speed equal to 0.8*c
+x_obs1 = 0.8*t
+
+lt = 1.15
+lx0 = extract_position_at_time(lt, t, x_obs0)[0,0]
+lx1 = extract_position_at_time(lt, t, x_obs1)[0,0]
 
 ax = add_to_plot(x_obs0,t, color = 'blue', linewidth = 3)
 add_to_plot(x_obs1,t, ax = ax, color = 'red', linewidth = 3)
+add_to_plot(np.array([lx0, lx1]), np.array([lt, lt]), ax = ax, color = (0.0, 0.6, 0.6), linewidth = 2)
 format_plot(ax)
 add_light_cones(0,0,ax)    
