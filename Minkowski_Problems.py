@@ -15,40 +15,96 @@ x_obs0 = 0*t
 x_obs1 = beta*t
 
 
-def plot_observer_trajectories(t, x_0, x_1):
-    # Initialize Plots
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
+# def plot_observer_trajectories(t, x_0, x_1):
+#     # Initialize Plots
+#     fig = plt.figure()
+#     ax = fig.add_subplot(111)
     
-    # Offsets for text placement
-    trans_offset = mtransforms.offset_copy(ax.transData, fig=fig,
-                                       x=-0.3, y=0.0, units='inches')
+#     # Offsets for text placement
+#     trans_offset = mtransforms.offset_copy(ax.transData, fig=fig,
+#                                        x=-0.3, y=0.0, units='inches')
     
-    # Plot Light Cone
-    ax.plot(-t, t, color = 'black', linewidth = 1)
-    ax.plot(t,t, color = 'black', linewidth = 1)
+#     # Plot Light Cone
+#     ax.plot(-t, t, color = 'black', linewidth = 1)
+#     ax.plot(t,t, color = 'black', linewidth = 1)
     
-    # Plot Observer Trajectories
-    line0, = ax.plot(x_0,t, color = 'blue', linewidth = 3)
-    line1, = ax.plot(x_1,t, color = 'red', linewidth = 3)
+#     # Plot Observer Trajectories
+#     line0, = ax.plot(x_0,t, color = 'blue', linewidth = 3)
+#     line1, = ax.plot(x_1,t, color = 'red', linewidth = 3)
     
-    # Text
-      # Light Cone
-    ax.text(1.2*t[len(t)//2], 0.8*t[len(t)//2], 'light-cone', rotation=45, transform=trans_offset)
-    ax.text(-1.2*t[len(t)//2], 0.8*t[len(t)//2], 'light-cone', rotation=-45, transform=trans_offset)
-      # Observers
-    ax.text(x_0[-1], 1.03*t[-1], 'Observer 0', color = 'blue', transform=trans_offset)
-    ax.text(x_1[-1], 1.03*t[-1], 'Observer 1', color = 'red', transform=trans_offset)
+#     # Text
+#       # Light Cone
+#     ax.text(1.2*t[len(t)//2], 0.8*t[len(t)//2], 'light-cone', rotation=45, transform=trans_offset)
+#     ax.text(-1.2*t[len(t)//2], 0.8*t[len(t)//2], 'light-cone', rotation=-45, transform=trans_offset)
+#       # Observers
+#     ax.text(x_0[-1], 1.03*t[-1], 'Observer 0', color = 'blue', transform=trans_offset)
+#     ax.text(x_1[-1], 1.03*t[-1], 'Observer 1', color = 'red', transform=trans_offset)
     
-    # Plot Formatting
+#     # Plot Formatting
+#     ax.set_xlabel('x (light-yrs)')
+#     ax.set_ylabel('ct (light-yrs)')
+#     ax.set_xlim((-1.1*t[-1], 1.1*t[-1]))
+#     ax.set_ylim((-0.05*t[-1], 1.1*t[-1]))
+#     ax.set_aspect(1)
+#     fig.tight_layout()
+#     fig.show()
+    
+#     return fig,ax,[line0, line1]
+    
+# fig, ax, lines = plot_observer_trajectories(t, x_obs0, x_obs1)
+
+def add_to_plot(x, y, ax=None, **plt_kwargs):
+    if ax is None:
+        ax = plt.gca()
+    ax.plot(x, y, **plt_kwargs)
+    return (ax)
+
+def format_plot(ax):
     ax.set_xlabel('x (light-yrs)')
     ax.set_ylabel('ct (light-yrs)')
-    ax.set_xlim((-1.1*t[-1], 1.1*t[-1]))
-    ax.set_ylim((-0.05*t[-1], 1.1*t[-1]))
+    temp = ax.get_lines()
+    xmin = np.min([i.get_xdata() for i in temp])
+    xmax = np.max([i.get_xdata() for i in temp])
+    ymin = np.min([i.get_ydata() for i in temp])
+    ymax = np.max([i.get_ydata() for i in temp])
+
+    ax.set_xlim((xmin - 0.05*(xmax-xmin), xmax + 0.05*(xmax-xmin)))
+    ax.set_ylim((ymin - 0.05*(ymax-ymin), ymax + 0.05*(ymax-ymin)))
     ax.set_aspect(1)
+    fig = ax.get_figure()
     fig.tight_layout()
-    fig.show()
     
-    return fig,ax,[line0, line1]
+
+def add_light_cones(x0, y0, ax, timeforward=True):
+
+    # (xmin, xmax) = ax.get_xlim()
+    # (ymin, ymax) = ax.get_ylim()
+    temp = ax.get_lines()
+    xmin = np.min([i.get_xdata() for i in temp])
+    xmax = np.max([i.get_xdata() for i in temp])
+    ymin = np.min([i.get_ydata() for i in temp])
+    ymax = np.max([i.get_ydata() for i in temp])
     
-fig, ax, lines = plot_observer_trajectories(t, x_obs0, x_obs1)
+    if timeforward:
+        negdist = min(x0 - xmin, ymax - y0)
+        posdist = min(xmax - x0, ymax - y0)
+        ax.plot([x0 - negdist, x0], [y0 + negdist, y0], color='black', linewidth=1)
+        ax.plot([x0, x0 + posdist], [y0, y0 + posdist], color='black', linewidth=1)
+    else:
+        negdist = min(x0 - xmin, y0 - ymin)
+        posdist = min(xmax - x0, y0 - ymin)
+        ax.plot([x0 - negdist, x0], [y0 - negdist, y0], color='black', linewidth=1)
+        ax.plot([x0, x0 + posdist], [y0, y0 - posdist], color='black', linewidth=1)
+        
+    # fig =ax.get_figure()
+    # Offsets for text placement
+    # trans_offset = mtransforms.offset_copy(ax.transData, fig=fig,
+    #                                     x=-0.3, y=0.0, units='inches')
+    # ax.text(1.2*t[len(t)//2], 0.8*t[len(t)//2], 'light-cone', rotation=45, transform=trans_offset)
+    # ax.text(-1.2*t[len(t)//2], 0.8*t[len(t)//2], 'light-cone', rotation=-45, transform=trans_offset)
+
+
+ax = add_to_plot(x_obs0,t, color = 'blue', linewidth = 3)
+add_to_plot(x_obs1,t, ax = ax, color = 'red', linewidth = 3)
+format_plot(ax)
+add_light_cones(0,0,ax)    
